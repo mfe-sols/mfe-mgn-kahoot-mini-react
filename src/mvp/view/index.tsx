@@ -225,7 +225,7 @@ export const AppView = ({
       : allPlayers;
   const connectedPlayersCount =
     snapshot?.connectedPlayersCount ?? connectedPlayerIds.length ?? connectedPlayers.length;
-  const joinedPlayersCount = allPlayers.length;
+  const joinedPlayersCount = snapshot?.joinedPlayersCount ?? allPlayers.length;
   const topPlayers = leaderboardData?.topPlayers ?? snapshot?.topPlayers ?? [];
   const leaderboard = leaderboardData?.leaderboard ?? [];
   const realtimeLabel = getRealtimeLabel(streamState, labels);
@@ -1050,7 +1050,10 @@ export const AppView = ({
                     }}
                   >
                     {allPlayers.map((player) => {
-                      const isOnline = !!player.id && connectedPlayerIdSet.has(player.id);
+                      const isOnline =
+                        typeof player.isOnline === "boolean"
+                          ? player.isOnline
+                          : !!player.id && connectedPlayerIdSet.has(player.id);
 
                       return (
                       <section key={player.id ?? player.name} className="ds-card" style={{ padding: "16px" }}>
