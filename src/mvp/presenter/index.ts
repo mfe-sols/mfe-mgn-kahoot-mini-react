@@ -46,6 +46,9 @@ export type AppViewModel = {
     hostLastPing: string;
     hostPlayersTitle: string;
     hostPlayersEmpty: string;
+    playersJoined: string;
+    playerOnline: string;
+    playerOffline: string;
     hostQrTitle: string;
     hostQrSubtitle: string;
     hostQrLinkLabel: string;
@@ -148,6 +151,9 @@ export const createPresenter = (model: AppModel): AppViewModel => ({
     hostLastPing: trKahootMini(toDomainKey("hostLastPing"), "hostLastPing"),
     hostPlayersTitle: trKahootMini(toDomainKey("hostPlayersTitle"), "hostPlayersTitle"),
     hostPlayersEmpty: trKahootMini(toDomainKey("hostPlayersEmpty"), "hostPlayersEmpty"),
+    playersJoined: trKahootMini(toDomainKey("playersJoined"), "playersJoined"),
+    playerOnline: trKahootMini(toDomainKey("playerOnline"), "playerOnline"),
+    playerOffline: trKahootMini(toDomainKey("playerOffline"), "playerOffline"),
     hostQrTitle: trKahootMini(toDomainKey("hostQrTitle"), "hostQrTitle"),
     hostQrSubtitle: trKahootMini(toDomainKey("hostQrSubtitle"), "hostQrSubtitle"),
     hostQrLinkLabel: trKahootMini(toDomainKey("hostQrLinkLabel"), "hostQrLinkLabel"),

@@ -217,12 +217,15 @@ export const AppView = ({
   const currentPin = snapshot?.session?.pin ?? pinSession?.pin ?? "";
   const sessionPhase = snapshot?.state?.phase ?? "lobby";
   const connectedPlayerIds = snapshot?.connectedPlayerIds ?? [];
+  const allPlayers = snapshot?.players ?? [];
+  const connectedPlayerIdSet = new Set(connectedPlayerIds);
   const connectedPlayers =
     connectedPlayerIds.length > 0
-      ? (snapshot?.players ?? []).filter((player) => !!player.id && connectedPlayerIds.includes(player.id))
-      : snapshot?.players ?? [];
+      ? allPlayers.filter((player) => !!player.id && connectedPlayerIds.includes(player.id))
+      : allPlayers;
   const connectedPlayersCount =
     snapshot?.connectedPlayersCount ?? connectedPlayerIds.length ?? connectedPlayers.length;
+  const joinedPlayersCount = allPlayers.length;
   const topPlayers = leaderboardData?.topPlayers ?? snapshot?.topPlayers ?? [];
   const leaderboard = leaderboardData?.leaderboard ?? [];
   const realtimeLabel = getRealtimeLabel(streamState, labels);
@@ -912,8 +915,8 @@ export const AppView = ({
                     lineHeight: 1.6,
                   }}
                 >
-                  {connectedPlayersCount > 0
-                    ? `${connectedPlayersCount} ${labels.hostConnectedUsers}.`
+                  {joinedPlayersCount > 0
+                    ? `${connectedPlayersCount} ${labels.hostConnectedUsers}. ${joinedPlayersCount} ${labels.playersJoined}.`
                     : labels.hostWaitingPlayers}
                   {lastPingAt ? ` ${labels.hostLastPing}: ${lastPingAt}.` : ""}
                 </div>
@@ -1027,7 +1030,7 @@ export const AppView = ({
               <div style={{ display: "grid", gap: "16px" }}>
                 <div style={{ fontSize: "22px", fontWeight: 800 }}>{labels.hostPlayersTitle}</div>
 
-                {connectedPlayersCount === 0 ? (
+                {joinedPlayersCount === 0 ? (
                   <div
                     style={{
                       borderRadius: "18px",
@@ -1046,10 +1049,45 @@ export const AppView = ({
                       gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                     }}
                   >
-                    {connectedPlayers.map((player) => (
+                    {allPlayers.map((player) => {
+                      const isOnline = !!player.id && connectedPlayerIdSet.has(player.id);
+
+                      return (
                       <section key={player.id ?? player.name} className="ds-card" style={{ padding: "16px" }}>
                         <div style={{ display: "grid", gap: "10px" }}>
-                          <div style={{ fontSize: "20px", fontWeight: 800 }}>{player.name ?? "-"}</div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              justifyContent: "space-between",
+                              gap: "12px",
+                            }}
+                          >
+                            <div style={{ fontSize: "20px", fontWeight: 800 }}>{player.name ?? "-"}</div>
+                            <div
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                borderRadius: "999px",
+                                padding: "6px 10px",
+                                fontSize: "12px",
+                                fontWeight: 800,
+                                color: isOnline ? "#166534" : "#475569",
+                                background: isOnline ? "rgba(220, 252, 231, 0.95)" : "rgba(226, 232, 240, 0.9)",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: "8px",
+                                  height: "8px",
+                                  borderRadius: "999px",
+                                  background: isOnline ? "#22c55e" : "#94a3b8",
+                                }}
+                              />
+                              {isOnline ? labels.playerOnline : labels.playerOffline}
+                            </div>
+                          </div>
                           <div style={{ display: "grid", gap: "6px", color: "#475569", fontSize: "14px" }}>
                             <div>
                               {labels.playerScore}: <strong>{player.score ?? 0}</strong>
@@ -1066,11 +1104,12 @@ export const AppView = ({
                           </div>
                         </div>
                       </section>
-                    ))}
+                    );
+                    })}
                   </div>
                 )}
 
-                {topPlayers.length > 0 ? (
+                {sessionPhase === "completed" && topPlayers.length > 0 ? (
                   <div
                     style={{
                       display: "grid",

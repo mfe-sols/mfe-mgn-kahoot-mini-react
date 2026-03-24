@@ -47,9 +47,12 @@ registerMessagesAll({
     "mfe.mfe-mgn-kahoot-mini-react.hostWaitingPlayers":
       "No player has joined yet. Keep this screen open and wait for client devices to connect.",
     "mfe.mfe-mgn-kahoot-mini-react.hostLastPing": "Last ping",
-    "mfe.mfe-mgn-kahoot-mini-react.hostPlayersTitle": "Connected players",
+    "mfe.mfe-mgn-kahoot-mini-react.hostPlayersTitle": "Players in room",
     "mfe.mfe-mgn-kahoot-mini-react.hostPlayersEmpty":
-      "The room is ready, but no connected player has appeared yet.",
+      "The room is ready, but no player has joined yet.",
+    "mfe.mfe-mgn-kahoot-mini-react.playersJoined": "Players in room",
+    "mfe.mfe-mgn-kahoot-mini-react.playerOnline": "Online",
+    "mfe.mfe-mgn-kahoot-mini-react.playerOffline": "Offline",
     "mfe.mfe-mgn-kahoot-mini-react.hostQrTitle": "Scan to join",
     "mfe.mfe-mgn-kahoot-mini-react.hostQrSubtitle":
       "Open the player screen directly with the current PIN prefilled so the user only needs to enter a display name.",
@@ -156,9 +159,12 @@ registerMessagesAll({
     "mfe.mfe-mgn-kahoot-mini-react.hostWaitingPlayers":
       "Chưa có người chơi nào join. Hãy giữ màn hình này mở và chờ các client kết nối vào phòng.",
     "mfe.mfe-mgn-kahoot-mini-react.hostLastPing": "Ping gần nhất",
-    "mfe.mfe-mgn-kahoot-mini-react.hostPlayersTitle": "Danh sách người chơi đã kết nối",
+    "mfe.mfe-mgn-kahoot-mini-react.hostPlayersTitle": "Người chơi trong phòng",
     "mfe.mfe-mgn-kahoot-mini-react.hostPlayersEmpty":
-      "Phòng đã sẵn sàng nhưng vẫn chưa có người chơi nào xuất hiện.",
+      "Phòng đã sẵn sàng nhưng vẫn chưa có người chơi nào join.",
+    "mfe.mfe-mgn-kahoot-mini-react.playersJoined": "Người chơi trong phòng",
+    "mfe.mfe-mgn-kahoot-mini-react.playerOnline": "Đang online",
+    "mfe.mfe-mgn-kahoot-mini-react.playerOffline": "Mất kết nối",
     "mfe.mfe-mgn-kahoot-mini-react.hostQrTitle": "Quét mã để vào game",
     "mfe.mfe-mgn-kahoot-mini-react.hostQrSubtitle":
       "Mở thẳng màn hình player với PIN hiện tại đã được điền sẵn để người chơi chỉ cần nhập tên hiển thị.",
