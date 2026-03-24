@@ -16,6 +16,10 @@ type KahootMiniPlaySnapshotResponse = {
   snapshot?: KahootMiniSnapshot;
 };
 
+type ApiErrorPayload = {
+  message?: string;
+};
+
 export type KahootMiniState = {
   phase?: "lobby" | "question_live" | "question_closed" | "completed" | string;
   currentQuestionIndex?: number;
@@ -79,6 +83,11 @@ const requireApiBaseUrl = () => {
   return baseUrl;
 };
 
+const readApiError = async (response: Response, fallbackMessage: string) => {
+  const payload = (await response.json().catch(() => ({}))) as ApiErrorPayload;
+  return payload.message ?? fallbackMessage;
+};
+
 export const generatePinSession = async (): Promise<KahootMiniPinSession> => {
   const response = await fetch(`${requireApiBaseUrl()}/api/kahoot-mini/pin?ts=${Date.now()}`, {
     method: "POST",
@@ -94,7 +103,9 @@ export const generatePinSession = async (): Promise<KahootMiniPinSession> => {
   });
 
   if (!response.ok) {
-    throw new Error(`PIN session request failed with status ${response.status}`);
+    throw new Error(
+      await readApiError(response, `PIN session request failed with status ${response.status}`)
+    );
   }
 
   const payload = (await response.json()) as KahootMiniPinResponse;
@@ -117,7 +128,9 @@ export const fetchPlaySnapshot = async (pin: string): Promise<KahootMiniSnapshot
   });
 
   if (!response.ok) {
-    throw new Error(`Play snapshot request failed with status ${response.status}`);
+    throw new Error(
+      await readApiError(response, `Play snapshot request failed with status ${response.status}`)
+    );
   }
 
   const payload = (await response.json()) as KahootMiniPlaySnapshotResponse;
