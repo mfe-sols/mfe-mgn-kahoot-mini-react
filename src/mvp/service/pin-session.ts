@@ -20,6 +20,10 @@ type ApiErrorPayload = {
   message?: string;
 };
 
+export type GeneratePinSessionInput = {
+  questionIds?: Array<number | string>;
+};
+
 export type KahootMiniState = {
   phase?: "lobby" | "question_live" | "question_closed" | "completed" | string;
   currentQuestionIndex?: number;
@@ -88,7 +92,9 @@ const readApiError = async (response: Response, fallbackMessage: string) => {
   return payload.message ?? fallbackMessage;
 };
 
-export const generatePinSession = async (): Promise<KahootMiniPinSession> => {
+export const generatePinSession = async (
+  input?: GeneratePinSessionInput
+): Promise<KahootMiniPinSession> => {
   const response = await fetch(`${requireApiBaseUrl()}/api/kahoot-mini/pin?ts=${Date.now()}`, {
     method: "POST",
     headers: {
@@ -99,6 +105,7 @@ export const generatePinSession = async (): Promise<KahootMiniPinSession> => {
       title: "MGN Kahoot Mini React",
       hostName: "Admin",
       maxPlayers: 50,
+      questionIds: Array.isArray(input?.questionIds) && input.questionIds.length > 0 ? input.questionIds : undefined,
     }),
   });
 

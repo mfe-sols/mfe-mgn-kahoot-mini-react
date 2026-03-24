@@ -32,6 +32,13 @@ export type AppViewModel = {
     pinUnavailable: string;
     pinExpiresAt: string;
     pinCountdown: string;
+    questionConfigTitle: string;
+    questionConfigSubtitle: string;
+    questionConfigSelected: string;
+    questionConfigAll: string;
+    questionConfigUseFive: string;
+    questionConfigUseTen: string;
+    questionConfigRequired: string;
     hostPanelTitle: string;
     hostPanelSubtitle: string;
     hostConnectedUsers: string;
@@ -127,6 +134,13 @@ export const createPresenter = (model: AppModel): AppViewModel => ({
     pinUnavailable: trKahootMini(toDomainKey("pinUnavailable"), "pinUnavailable"),
     pinExpiresAt: trKahootMini(toDomainKey("pinExpiresAt"), "pinExpiresAt"),
     pinCountdown: trKahootMini(toDomainKey("pinCountdown"), "pinCountdown"),
+    questionConfigTitle: trKahootMini(toDomainKey("questionConfigTitle"), "questionConfigTitle"),
+    questionConfigSubtitle: trKahootMini(toDomainKey("questionConfigSubtitle"), "questionConfigSubtitle"),
+    questionConfigSelected: trKahootMini(toDomainKey("questionConfigSelected"), "questionConfigSelected"),
+    questionConfigAll: trKahootMini(toDomainKey("questionConfigAll"), "questionConfigAll"),
+    questionConfigUseFive: trKahootMini(toDomainKey("questionConfigUseFive"), "questionConfigUseFive"),
+    questionConfigUseTen: trKahootMini(toDomainKey("questionConfigUseTen"), "questionConfigUseTen"),
+    questionConfigRequired: trKahootMini(toDomainKey("questionConfigRequired"), "questionConfigRequired"),
     hostPanelTitle: trKahootMini(toDomainKey("hostPanelTitle"), "hostPanelTitle"),
     hostPanelSubtitle: trKahootMini(toDomainKey("hostPanelSubtitle"), "hostPanelSubtitle"),
     hostConnectedUsers: trKahootMini(toDomainKey("hostConnectedUsers"), "hostConnectedUsers"),

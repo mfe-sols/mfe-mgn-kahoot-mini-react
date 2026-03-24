@@ -31,6 +31,15 @@ registerMessagesAll({
     "mfe.mfe-mgn-kahoot-mini-react.pinUnavailable": "No active session yet. Generate a PIN to continue.",
     "mfe.mfe-mgn-kahoot-mini-react.pinExpiresAt": "Expires at",
     "mfe.mfe-mgn-kahoot-mini-react.pinCountdown": "Time remaining",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigTitle": "Question setup",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigSubtitle":
+      "All questions are selected by default. You can keep the full set or pick any subset before creating the client session.",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigSelected": "Selected questions",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigAll": "All questions",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigUseFive": "Use 5 questions",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigUseTen": "Use 10 questions",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigRequired":
+      "Select at least one question before generating a PIN.",
     "mfe.mfe-mgn-kahoot-mini-react.hostPanelTitle": "Host control room",
     "mfe.mfe-mgn-kahoot-mini-react.hostPanelSubtitle":
       "Watch connected players in realtime and trigger the game flow from this host screen.",
@@ -131,6 +140,15 @@ registerMessagesAll({
     "mfe.mfe-mgn-kahoot-mini-react.pinUnavailable": "Chưa có phiên nào. Hãy tạo mã PIN để tiếp tục.",
     "mfe.mfe-mgn-kahoot-mini-react.pinExpiresAt": "Hết hạn lúc",
     "mfe.mfe-mgn-kahoot-mini-react.pinCountdown": "Thời gian còn lại",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigTitle": "Cấu hình bộ câu hỏi",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigSubtitle":
+      "Mặc định chọn toàn bộ câu hỏi. Bạn có thể giữ nguyên hoặc chọn linh hoạt từng câu trước khi tạo session cho client.",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigSelected": "Số câu đã chọn",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigAll": "Toàn bộ câu hỏi",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigUseFive": "Dùng 5 câu",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigUseTen": "Dùng 10 câu",
+    "mfe.mfe-mgn-kahoot-mini-react.questionConfigRequired":
+      "Hãy chọn ít nhất một câu hỏi trước khi tạo mã PIN.",
     "mfe.mfe-mgn-kahoot-mini-react.hostPanelTitle": "Bảng điều khiển host",
     "mfe.mfe-mgn-kahoot-mini-react.hostPanelSubtitle":
       "Theo dõi người chơi đã kết nối theo thời gian thực và điều khiển phiên game ngay trên màn hình host này.",

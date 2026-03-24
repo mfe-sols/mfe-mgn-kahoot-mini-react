@@ -177,13 +177,17 @@ const getSessionPhaseLabel = (phase: string | undefined, labels: Props["labels"]
 const getPlayerJoinedAt = (player: KahootMiniPlayerSnapshot) =>
   player.joinedAt ? formatSessionTime(player.joinedAt) : "--";
 
+const normalizeQuestionKey = (value: number | string) => String(value);
+
 export const AppView = ({
   title,
   subtitle,
   introEyebrow,
+  questions,
   labels,
 }: Props): JSX.Element => {
   const initialSession = readStoredPinSession();
+  const allQuestionIds = questions.map((question) => normalizeQuestionKey(question.id));
   const [phase, setPhase] = useState<Phase>(initialSession ? "intro" : "pin");
   const [accessPin, setAccessPin] = useState("");
   const [accessError, setAccessError] = useState("");
@@ -202,6 +206,13 @@ export const AppView = ({
   const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState("");
   const [hasCopiedJoinLink, setHasCopiedJoinLink] = useState(false);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>(() => allQuestionIds);
+
+  const selectedQuestionIdSet = new Set(selectedQuestionIds);
+  const selectedQuestionCount = questions.filter((question) =>
+    selectedQuestionIdSet.has(normalizeQuestionKey(question.id))
+  ).length;
+  const questionPresetCounts = [5, 10].filter((count) => count < questions.length);
 
   const currentPin = snapshot?.session?.pin ?? pinSession?.pin ?? "";
   const sessionPhase = snapshot?.state?.phase ?? "lobby";
@@ -226,6 +237,7 @@ export const AppView = ({
   const qrCodeUrl = joinUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=${encodeURIComponent(joinUrl)}`
     : "";
+  const canConfigureNextSession = !pinSession || sessionPhase === "completed";
 
   const clearHostSessionState = () => {
     setPhase("pin");
@@ -240,6 +252,28 @@ export const AppView = ({
     setIsLeaderboardLoading(false);
     setHasCopiedJoinLink(false);
     persistPinSession(null);
+  };
+
+  const applyQuestionPreset = (count: number | "all") => {
+    const nextIds =
+      count === "all"
+        ? allQuestionIds
+        : questions.slice(0, count).map((question) => normalizeQuestionKey(question.id));
+    setSelectedQuestionIds(nextIds);
+    setPinError("");
+  };
+
+  const toggleQuestionSelection = (questionId: string) => {
+    setSelectedQuestionIds((current) => {
+      const nextSet = new Set(current);
+      if (nextSet.has(questionId)) {
+        nextSet.delete(questionId);
+      } else {
+        nextSet.add(questionId);
+      }
+      return allQuestionIds.filter((id) => nextSet.has(id));
+    });
+    setPinError("");
   };
 
   const resyncPlayState = async (pin: string) => {
@@ -288,6 +322,10 @@ export const AppView = ({
   };
 
   const handleGeneratePin = async () => {
+    if (selectedQuestionCount === 0) {
+      setPinError(labels.questionConfigRequired);
+      return;
+    }
     setPinError("");
     setHostActionError("");
     setIsPinSessionLoading(true);
@@ -301,7 +339,15 @@ export const AppView = ({
     setLeaderboardError("");
     setIsLeaderboardLoading(false);
     try {
-      const nextSession = await generatePinSession();
+      const nextSession = await generatePinSession(
+        selectedQuestionCount === questions.length
+          ? undefined
+          : {
+              questionIds: questions
+                .filter((question) => selectedQuestionIdSet.has(normalizeQuestionKey(question.id)))
+                .map((question) => question.id),
+            }
+      );
       broadcastSessionReset();
       setPinSession(nextSession);
       setSnapshot({
@@ -367,6 +413,14 @@ export const AppView = ({
   useEffect(() => {
     persistPinSession(pinSession);
   }, [pinSession]);
+
+  useEffect(() => {
+    setSelectedQuestionIds((current) => {
+      const validSet = new Set(allQuestionIds);
+      const next = current.filter((id) => validSet.has(id));
+      return next.length > 0 ? next : allQuestionIds;
+    });
+  }, [allQuestionIds.join("|")]);
 
   useEffect(() => {
     if (!pinSession?.expiresAt) return undefined;
@@ -469,6 +523,147 @@ export const AppView = ({
     leaderboardError,
     isLeaderboardLoading,
   ]);
+
+  const questionConfigPanel = (
+    <div
+      style={{
+        borderRadius: "18px",
+        border: "1px solid rgba(15, 23, 42, 0.08)",
+        background: "rgba(255,255,255,0.9)",
+        padding: "16px",
+        display: "grid",
+        gap: "14px",
+      }}
+    >
+      <div style={{ display: "grid", gap: "6px" }}>
+        <div style={{ fontSize: "18px", fontWeight: 800 }}>{labels.questionConfigTitle}</div>
+        <div style={{ color: "#475569", fontSize: "14px", lineHeight: 1.6 }}>
+          {labels.questionConfigSubtitle}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            borderRadius: "999px",
+            background: "rgba(15, 23, 42, 0.06)",
+            padding: "8px 12px",
+            fontSize: "13px",
+            fontWeight: 700,
+            color: "#0f172a",
+          }}
+        >
+          <span>{labels.questionConfigSelected}</span>
+          <span style={{ fontSize: "16px" }}>
+            {selectedQuestionCount}/{questions.length}
+          </span>
+        </div>
+
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="ds-btn ds-btn--secondary ds-btn--sm"
+            onClick={() => applyQuestionPreset("all")}
+            disabled={!canConfigureNextSession}
+          >
+            {labels.questionConfigAll}
+          </button>
+          {questionPresetCounts.includes(5) ? (
+            <button
+              type="button"
+              className="ds-btn ds-btn--secondary ds-btn--sm"
+              onClick={() => applyQuestionPreset(5)}
+              disabled={!canConfigureNextSession}
+            >
+              {labels.questionConfigUseFive}
+            </button>
+          ) : null}
+          {questionPresetCounts.includes(10) ? (
+            <button
+              type="button"
+              className="ds-btn ds-btn--secondary ds-btn--sm"
+              onClick={() => applyQuestionPreset(10)}
+              disabled={!canConfigureNextSession}
+            >
+              {labels.questionConfigUseTen}
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gap: "10px",
+          maxHeight: "340px",
+          overflowY: "auto",
+          paddingRight: "4px",
+        }}
+      >
+        {questions.map((question, index) => {
+          const questionId = normalizeQuestionKey(question.id);
+          const checked = selectedQuestionIdSet.has(questionId);
+
+          return (
+            <label
+              key={questionId}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "auto 1fr",
+                gap: "12px",
+                alignItems: "start",
+                borderRadius: "16px",
+                border: checked
+                  ? "1px solid rgba(15, 118, 110, 0.32)"
+                  : "1px solid rgba(148, 163, 184, 0.24)",
+                background: checked
+                  ? "linear-gradient(135deg, rgba(236, 253, 245, 0.94) 0%, rgba(240, 249, 255, 0.92) 100%)"
+                  : "rgba(248, 250, 252, 0.92)",
+                padding: "12px 14px",
+                cursor: canConfigureNextSession ? "pointer" : "not-allowed",
+                opacity: canConfigureNextSession ? 1 : 0.72,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => toggleQuestionSelection(questionId)}
+                disabled={!canConfigureNextSession}
+                style={{ width: "18px", height: "18px", marginTop: "2px" }}
+              />
+              <div style={{ display: "grid", gap: "6px" }}>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    color: "#0f766e",
+                  }}
+                >
+                  Question {index + 1}
+                </div>
+                <div style={{ color: "#0f172a", fontSize: "15px", fontWeight: 700, lineHeight: 1.45 }}>
+                  {question.prompt}
+                </div>
+              </div>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   if (!isAccessGranted) {
     return (
@@ -652,6 +847,8 @@ export const AppView = ({
                 </div>
 
                 <section style={{ display: "grid", gap: "14px", alignContent: "start" }}>
+                  {questionConfigPanel}
+
                   {pinError ? (
                     <div style={{ color: "#b91c1c", fontSize: "14px", fontWeight: 700 }}>{pinError}</div>
                   ) : null}
@@ -663,7 +860,7 @@ export const AppView = ({
                       onClick={() => {
                         void handleGeneratePin();
                       }}
-                      disabled={isPinSessionLoading}
+                      disabled={isPinSessionLoading || selectedQuestionCount === 0}
                     >
                       {labels.pinGenerate}
                     </button>
@@ -950,6 +1147,8 @@ export const AppView = ({
                     ) : null}
                   </section>
                 ) : null}
+
+                {sessionPhase === "completed" ? questionConfigPanel : null}
               </div>
             </section>
           ) : null}
