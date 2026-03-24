@@ -1,0 +1,22 @@
+{
+  "name": "mfe-mgn-kahoot-mini-react",
+  "projectType": "application",
+  "root": "apps/mfe-mgn-kahoot-mini-react",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/mfe-mgn-kahoot-mini-react",
+        "command": "pnpm start"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/mfe-mgn-kahoot-mini-react",
+        "command": "pnpm build"
+      },
+      "outputs": ["{workspaceRoot}/apps/mfe-mgn-kahoot-mini-react/dist"]
+    }
+  }
+}
