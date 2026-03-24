@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import type { AppViewModel } from "../presenter";
 import {
+  fetchQuizBank,
   fetchPlaySnapshot,
   generatePinSession,
   resolveApiBaseUrl,
   type KahootMiniPinSession,
   type KahootMiniPlayerSnapshot,
+  type KahootMiniQuestion,
+  type KahootMiniQuizDefinition,
   type KahootMiniSnapshot,
 } from "../service/pin-session";
 import { fetchLeaderboard, type KahootMiniLeaderboardResponse } from "../service/leaderboard";
@@ -179,15 +182,31 @@ const getPlayerJoinedAt = (player: KahootMiniPlayerSnapshot) =>
 
 const normalizeQuestionKey = (value: number | string) => String(value);
 
+const isValidQuestion = (question: KahootMiniQuestion | undefined | null): question is Required<
+  Pick<KahootMiniQuestion, "id" | "prompt" | "correctAnswerId" | "choices">
+> &
+  KahootMiniQuestion => {
+  if (!question) return false;
+  if (typeof question.id !== "number" && typeof question.id !== "string") return false;
+  if (typeof question.prompt !== "string" || !question.prompt.trim()) return false;
+  if (typeof question.correctAnswerId !== "string" || !question.correctAnswerId.trim()) return false;
+  if (!Array.isArray(question.choices) || question.choices.length === 0) return false;
+  return question.choices.every(
+    (choice) =>
+      !!choice &&
+      typeof choice.id === "string" &&
+      typeof choice.label === "string" &&
+      typeof choice.text === "string"
+  );
+};
+
 export const AppView = ({
   title,
   subtitle,
   introEyebrow,
-  questions,
   labels,
 }: Props): JSX.Element => {
   const initialSession = readStoredPinSession();
-  const allQuestionIds = questions.map((question) => normalizeQuestionKey(question.id));
   const [phase, setPhase] = useState<Phase>(initialSession ? "intro" : "pin");
   const [accessPin, setAccessPin] = useState("");
   const [accessError, setAccessError] = useState("");
@@ -206,13 +225,19 @@ export const AppView = ({
   const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState("");
   const [hasCopiedJoinLink, setHasCopiedJoinLink] = useState(false);
-  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>(() => allQuestionIds);
+  const [quizDefinition, setQuizDefinition] = useState<KahootMiniQuizDefinition | null>(null);
+  const [isQuestionBankLoading, setIsQuestionBankLoading] = useState(false);
+  const [questionBankError, setQuestionBankError] = useState("");
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
+
+  const availableQuestions = (quizDefinition?.questions ?? []).filter(isValidQuestion);
+  const allQuestionIds = availableQuestions.map((question) => normalizeQuestionKey(question.id));
 
   const selectedQuestionIdSet = new Set(selectedQuestionIds);
-  const selectedQuestionCount = questions.filter((question) =>
+  const selectedQuestionCount = availableQuestions.filter((question) =>
     selectedQuestionIdSet.has(normalizeQuestionKey(question.id))
   ).length;
-  const questionPresetCounts = [5, 10].filter((count) => count < questions.length);
+  const questionPresetCounts = [5, 10].filter((count) => count < availableQuestions.length);
 
   const currentPin = snapshot?.session?.pin ?? pinSession?.pin ?? "";
   const sessionPhase = snapshot?.state?.phase ?? "lobby";
@@ -242,6 +267,31 @@ export const AppView = ({
     : "";
   const canConfigureNextSession = !pinSession || sessionPhase === "completed";
 
+  const loadQuestionBank = async () => {
+    setIsQuestionBankLoading(true);
+    setQuestionBankError("");
+
+    try {
+      const payload = await fetchQuizBank();
+      const quizzes = Array.isArray(payload.quizzes) ? payload.quizzes : [];
+      const defaultQuiz =
+        quizzes.find((quiz) => quiz.id === payload.defaultQuizId || quiz.slug === payload.defaultQuizId) ??
+        quizzes[0] ??
+        null;
+
+      if (!defaultQuiz || !Array.isArray(defaultQuiz.questions) || defaultQuiz.questions.filter(isValidQuestion).length === 0) {
+        throw new Error("Quiz bank is empty or invalid.");
+      }
+
+      setQuizDefinition(defaultQuiz);
+    } catch (error) {
+      setQuizDefinition(null);
+      setQuestionBankError(error instanceof Error ? error.message : labels.pinUnavailable);
+    } finally {
+      setIsQuestionBankLoading(false);
+    }
+  };
+
   const clearHostSessionState = () => {
     setPhase("pin");
     setPinSession(null);
@@ -261,7 +311,7 @@ export const AppView = ({
     const nextIds =
       count === "all"
         ? allQuestionIds
-        : questions.slice(0, count).map((question) => normalizeQuestionKey(question.id));
+        : availableQuestions.slice(0, count).map((question) => normalizeQuestionKey(question.id));
     setSelectedQuestionIds(nextIds);
     setPinError("");
   };
@@ -325,6 +375,10 @@ export const AppView = ({
   };
 
   const handleGeneratePin = async () => {
+    if (!quizDefinition?.id) {
+      setPinError(questionBankError || "Question bank is not available.");
+      return;
+    }
     if (selectedQuestionCount === 0) {
       setPinError(labels.questionConfigRequired);
       return;
@@ -343,10 +397,11 @@ export const AppView = ({
     setIsLeaderboardLoading(false);
     try {
       const nextSession = await generatePinSession(
-        selectedQuestionCount === questions.length
+        selectedQuestionCount === availableQuestions.length
           ? undefined
           : {
-              questionIds: questions
+              quizId: quizDefinition.id,
+              questionIds: availableQuestions
                 .filter((question) => selectedQuestionIdSet.has(normalizeQuestionKey(question.id)))
                 .map((question) => question.id),
             }
@@ -424,6 +479,12 @@ export const AppView = ({
       return next.length > 0 ? next : allQuestionIds;
     });
   }, [allQuestionIds.join("|")]);
+
+  useEffect(() => {
+    if (!isAccessGranted) return;
+    if (quizDefinition || isQuestionBankLoading) return;
+    void loadQuestionBank();
+  }, [isAccessGranted, quizDefinition, isQuestionBankLoading]);
 
   useEffect(() => {
     if (!pinSession?.expiresAt) return undefined;
@@ -569,7 +630,7 @@ export const AppView = ({
         >
           <span>{labels.questionConfigSelected}</span>
           <span style={{ fontSize: "16px" }}>
-            {selectedQuestionCount}/{questions.length}
+            {selectedQuestionCount}/{availableQuestions.length}
           </span>
         </div>
 
@@ -614,7 +675,7 @@ export const AppView = ({
           paddingRight: "4px",
         }}
       >
-        {questions.map((question, index) => {
+        {availableQuestions.map((question, index) => {
           const questionId = normalizeQuestionKey(question.id);
           const checked = selectedQuestionIdSet.has(questionId);
 
@@ -852,6 +913,18 @@ export const AppView = ({
                 <section style={{ display: "grid", gap: "14px", alignContent: "start" }}>
                   {questionConfigPanel}
 
+                  {isQuestionBankLoading ? (
+                    <div style={{ color: "#475569", fontSize: "14px", fontWeight: 700 }}>
+                      Loading question bank...
+                    </div>
+                  ) : null}
+
+                  {questionBankError ? (
+                    <div style={{ color: "#b91c1c", fontSize: "14px", fontWeight: 700 }}>
+                      {questionBankError}
+                    </div>
+                  ) : null}
+
                   {pinError ? (
                     <div style={{ color: "#b91c1c", fontSize: "14px", fontWeight: 700 }}>{pinError}</div>
                   ) : null}
@@ -863,7 +936,12 @@ export const AppView = ({
                       onClick={() => {
                         void handleGeneratePin();
                       }}
-                      disabled={isPinSessionLoading || selectedQuestionCount === 0}
+                      disabled={
+                        isPinSessionLoading ||
+                        isQuestionBankLoading ||
+                        !quizDefinition?.id ||
+                        selectedQuestionCount === 0
+                      }
                     >
                       {labels.pinGenerate}
                     </button>

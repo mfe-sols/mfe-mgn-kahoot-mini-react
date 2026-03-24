@@ -21,7 +21,38 @@ type ApiErrorPayload = {
 };
 
 export type GeneratePinSessionInput = {
+  quizId?: string;
   questionIds?: Array<number | string>;
+};
+
+export type KahootMiniQuestionChoice = {
+  id?: string;
+  label?: string;
+  text?: string;
+};
+
+export type KahootMiniQuestion = {
+  id?: number | string;
+  prompt?: string;
+  explanation?: string;
+  correctAnswerId?: string;
+  choices?: KahootMiniQuestionChoice[];
+};
+
+export type KahootMiniQuizDefinition = {
+  id?: string;
+  slug?: string;
+  title?: string;
+  description?: string;
+  language?: string;
+  timePerQuestionSec?: number;
+  pointsPerCorrect?: number;
+  questions?: KahootMiniQuestion[];
+};
+
+type KahootMiniQuizBankResponse = {
+  defaultQuizId?: string;
+  quizzes?: KahootMiniQuizDefinition[];
 };
 
 export type KahootMiniState = {
@@ -105,6 +136,7 @@ export const generatePinSession = async (
     },
     body: JSON.stringify({
       title: "MGN Kahoot Mini React",
+      quizId: input?.quizId,
       hostName: "Admin",
       maxPlayers: 50,
       questionIds: Array.isArray(input?.questionIds) && input.questionIds.length > 0 ? input.questionIds : undefined,
@@ -127,6 +159,23 @@ export const generatePinSession = async (
 };
 
 export const fetchPinSession = generatePinSession;
+
+export const fetchQuizBank = async (): Promise<KahootMiniQuizBankResponse> => {
+  const response = await fetch(`${requireApiBaseUrl()}/api/kahoot-mini/quizzes`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await readApiError(response, `Quiz bank request failed with status ${response.status}`)
+    );
+  }
+
+  return (await response.json()) as KahootMiniQuizBankResponse;
+};
 
 export const fetchPlaySnapshot = async (pin: string): Promise<KahootMiniSnapshot> => {
   const response = await fetch(`${requireApiBaseUrl()}/api/kahoot-mini/play?pin=${encodeURIComponent(pin)}`, {
