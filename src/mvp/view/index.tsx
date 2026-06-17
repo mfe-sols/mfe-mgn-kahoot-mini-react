@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toDataURL } from "qrcode";
 import type { AppViewModel } from "../presenter";
 import {
   fetchQuizBank,
@@ -229,6 +230,7 @@ export const AppView = ({
   const [isQuestionBankLoading, setIsQuestionBankLoading] = useState(false);
   const [questionBankError, setQuestionBankError] = useState("");
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
 
   const availableQuestions = (quizDefinition?.questions ?? []).filter(isValidQuestion);
   const allQuestionIds = availableQuestions.map((question) => normalizeQuestionKey(question.id));
@@ -262,10 +264,32 @@ export const AppView = ({
     typeof window !== "undefined" && currentPin
       ? `${window.location.origin}/?kahootPin=${encodeURIComponent(currentPin)}`
       : "";
-  const qrCodeUrl = joinUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=${encodeURIComponent(joinUrl)}`
-    : "";
   const canConfigureNextSession = !pinSession || sessionPhase === "completed";
+
+  useEffect(() => {
+    let cancelled = false;
+    setQrCodeUrl("");
+    if (!joinUrl) return undefined;
+    void toDataURL(joinUrl, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 240,
+      color: {
+        dark: "#0f172a",
+        light: "#ffffff",
+      },
+    }).then(
+      (next) => {
+        if (!cancelled) setQrCodeUrl(next);
+      },
+      () => {
+        if (!cancelled) setQrCodeUrl("");
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [joinUrl]);
 
   const loadQuestionBank = async () => {
     setIsQuestionBankLoading(true);
@@ -1086,17 +1110,37 @@ export const AppView = ({
                       padding: "16px",
                     }}
                   >
-                    <img
-                      src={qrCodeUrl}
-                      alt={labels.hostQrTitle}
-                      style={{
-                        display: "block",
-                        width: "min(240px, 100%)",
-                        height: "auto",
-                        borderRadius: "18px",
-                        background: "#fff",
-                      }}
-                    />
+                    {qrCodeUrl ? (
+                      <img
+                        src={qrCodeUrl}
+                        alt={labels.hostQrTitle}
+                        style={{
+                          display: "block",
+                          width: "min(240px, 100%)",
+                          height: "auto",
+                          borderRadius: "18px",
+                          background: "#fff",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        aria-hidden="true"
+                        style={{
+                          display: "grid",
+                          placeItems: "center",
+                          width: "min(240px, 60vw)",
+                          aspectRatio: "1 / 1",
+                          borderRadius: "18px",
+                          background: "#fff",
+                          color: "#0f172a",
+                          fontSize: "28px",
+                          fontWeight: 900,
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        QR
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
